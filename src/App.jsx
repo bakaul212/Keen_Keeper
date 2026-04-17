@@ -281,3 +281,76 @@ const Timeline = () => {
     </div>
   );
 };
+
+// ---------------- STATS (PIE CHART) ----------------
+const Stats = () => {
+  // ১. LocalStorage থেকে ডাটা সংগ্রহ করা
+  const timelineData = JSON.parse(localStorage.getItem("timeline") || "[]");
+
+  // ২. ডাটা প্রসেস করা (টাইপ অনুযায়ী গণনা করা)
+  const data = [
+    { name: 'Call', value: timelineData.filter(i => i.type === 'Call').length },
+    { name: 'Text', value: timelineData.filter(i => i.type === 'Text').length },
+    { name: 'Video', value: timelineData.filter(i => i.type === 'Video').length },
+  ];
+
+  // টোটাল ইন্টারঅ্যাকশন সংখ্যা
+  const totalInteractions = timelineData.length;
+
+  // ফিগমা কালার থিম অনুযায়ী কালার প্যালেট
+  const COLORS = ['#0D3B31', '#8B5CF6', '#10B981']; 
+
+  return (
+    <div className="max-w-7xl mx-auto py-20 px-10 min-h-screen">
+      <h1 className="text-5xl font-bold text-[#1a2b3b] mb-16 text-center">Friendship Analytics</h1>
+      
+      <div className="bg-white p-16 rounded-[48px] border border-gray-100 shadow-sm max-w-4xl mx-auto">
+        <h3 className="text-gray-400 font-bold mb-10 text-lg uppercase tracking-widest text-center">
+          By Interaction Type
+        </h3>
+        
+        {/* চার্ট কন্টেইনার */}
+        <div className="h-80 w-full relative">
+          <ResponsiveContainer width="100%" height="100%">
+            <PieChart>
+              <Pie
+                data={data}
+                innerRadius={85}
+                outerRadius={115}
+                paddingAngle={8}
+                dataKey="value"
+                stroke="none"
+              >
+                {data.map((entry, index) => (
+                  <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                ))}
+              </Pie>
+              <Tooltip 
+                contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+              />
+            </PieChart>
+          </ResponsiveContainer>
+          
+          {/* চার্টের মাঝখানের টোটাল নাম্বার (Donut Center Text) */}
+          <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-center">
+            <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest mb-1">Total</p>
+            <p className="text-6xl font-bold text-[#0D3B31]">{totalInteractions}</p>
+          </div>
+        </div>
+
+        {/* কাস্টম লেজেন্ড (Legend) */}
+        <div className="flex justify-center gap-10 mt-12">
+          {data.map((item, index) => (
+            <div key={item.name} className="flex items-center gap-3 text-sm font-bold text-gray-500">
+              <span 
+                className="w-3 h-3 rounded-full" 
+                style={{ backgroundColor: COLORS[index % COLORS.length] }}
+              ></span>
+              {item.name}: {item.value}
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+};
