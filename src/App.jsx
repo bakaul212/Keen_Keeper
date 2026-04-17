@@ -113,3 +113,101 @@ const Footer = () => (
     </div>
   </footer>
 ); 
+
+// ---------------- HOME ----------------
+const Home = () => {
+  const [friends, setFriends] = useState([]);
+
+  useEffect(() => {
+    fetch("/friends.json")
+      .then((res) => res.json())
+      .then((data) => setFriends(data))
+      .catch((err) => console.error(err));
+  }, []);
+
+  return (
+    <div className="max-w-7xl mx-auto px-6 py-20">
+      {/* Header Section */}
+      <div className="text-center">
+        <h1 className="text-5xl font-bold text-[#1a2b3b] mb-4 tracking-tight">
+          Friends to keep close in your life
+        </h1>
+        <p className="text-gray-400 text-sm mb-10 max-w-2xl mx-auto leading-relaxed">
+          Your personal shelf of meaningful connections. Browse, tend, and nurture the relationships that matter most.
+        </p>
+
+        <button
+          onClick={() => toast.success("Feature coming soon!")}
+          className="bg-[#0D3B31] text-white px-8 py-2.5 rounded-md flex items-center gap-2 mx-auto font-bold hover:bg-[#154d41] transition-all mb-20"
+        >
+          <span className="text-xl">+</span> Add a Friend
+        </button>
+      </div>
+
+      {/* Stats Section */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-6 mb-20">
+        {[
+          { l: "Total Friends", v: friends.length },
+          { l: "On Track", v: friends.filter(f => f.status === 'on-track').length },
+          { l: "Need Attention", v: friends.filter(f => f.status === 'overdue').length },
+          { l: "Interactions This Month", v: "12" },
+        ].map((s, i) => (
+          <div key={i} className="bg-white border border-gray-100 p-10 rounded-xl text-center shadow-sm">
+            <p className="text-5xl font-bold text-[#1a2b3b] mb-3">{s.v}</p>
+            <p className="text-sm text-gray-400 font-medium">{s.l}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* Your Friends Section Title */}
+      <h2 className="text-2xl font-bold text-[#1a2b3b] mb-8 text-left">Your Friends</h2>
+
+      {/* Friends Grid Section */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-8">
+        {friends.map((f) => (
+          <Link 
+            key={f.id} 
+            to={`/friend/${f.id}`} 
+            className="bg-white border border-gray-100 rounded-[35px] p-8 text-center shadow-sm hover:shadow-xl transition-all duration-300 group"
+          >
+            {/* Friend Image */}
+            <div className="relative w-24 h-24 mx-auto mb-6">
+               <img 
+                 src={f.picture} 
+                 className="w-full h-full rounded-full object-cover border-4 border-gray-50 shadow-sm group-hover:scale-105 transition-transform" 
+                 alt={f.name} 
+               />
+            </div>
+            
+            {/* Friend Info */}
+            <h3 className="font-bold text-2xl text-[#1a2b3b] mb-1">{f.name}</h3>
+            <p className="text-sm text-[#8E9BAE] font-medium mb-4">{f.days_since_contact}d ago</p>
+            
+            {/* Tags */}
+            <div className="flex flex-wrap justify-center gap-2 mb-4">
+              {f.tags && f.tags.map((tag, idx) => (
+                <span 
+                  key={idx} 
+                  className="bg-[#E6F9F1] text-[#48C78E] text-[10px] font-bold px-4 py-1.5 rounded-full uppercase tracking-wider"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+
+            {/* Status Badge */}
+            <div className={`text-[11px] uppercase font-bold px-6 py-2.5 rounded-full text-white inline-block shadow-sm ${
+                f.status === "overdue" 
+                  ? "bg-[#FF5C5C]" 
+                  : f.status === "almost due" 
+                    ? "bg-[#F2AC44]" 
+                    : "bg-[#0D3B31]"
+            }`}>
+              {f.status}
+            </div>
+          </Link>
+        ))}
+      </div>
+    </div>
+  );
+};
