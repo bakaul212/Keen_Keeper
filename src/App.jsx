@@ -117,13 +117,32 @@ const Footer = () => (
 // ---------------- HOME ----------------
 const Home = () => {
   const [friends, setFriends] = useState([]);
+  const [loading, setLoading] = useState(true); // ১. লোডিং স্টেট
 
   useEffect(() => {
     fetch("/friends.json")
       .then((res) => res.json())
-      .then((data) => setFriends(data))
-      .catch((err) => console.error(err));
+      .then((data) => {
+        setFriends(data);
+        setLoading(false); // ২. ডাটা আসার পর লোডিং বন্ধ
+      })
+      .catch((err) => {
+        console.error(err);
+        setLoading(false);
+      });
   }, []);
+
+  // ১০.২ লোডিং অ্যানিমেশন কন্ডিশন
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh]">
+        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-b-4 border-[#0D3B31]"></div>
+        <p className="mt-4 text-[#0D3B31] font-bold tracking-widest animate-pulse uppercase">
+          Fetching Friends...
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-7xl mx-auto px-6 py-20">
@@ -354,7 +373,7 @@ const Stats = ({ timelineData }) => {
 };
 
 // ---------------- FRIEND DETAILS ----------------
-const FriendDetails = ({ addInteraction }) => {
+const FriendDetails = ({ addInteraction, timeline }) => {
   const { id } = useParams();
   const [friend, setFriend] = useState(null);
 
@@ -367,14 +386,33 @@ const FriendDetails = ({ addInteraction }) => {
       });
   }, [id]);
 
-  // ইন্টারঅ্যাকশন হ্যান্ডলার ফাংশন (LocalStorage ছাড়া সরাসরি স্টেটে ডাটা পাঠাবে)
+  // ইন্টারঅ্যাকশন হ্যান্ডলার ফাংশন (ডুপ্লিকেট চেকসহ)
   const handleInteraction = (type) => {
     if (!friend) return;
 
+    // ১. চেক করা যে বর্তমান সেশনে এই টাইপের ইন্টারঅ্যাকশন অলরেডি আছে কি না
+    const isAlreadyAdded = timeline.some(
+      (item) => item.friendName === friend.name && item.type === type
+    );
+
+    if (isAlreadyAdded) {
+      // যদি অলরেডি থাকে তবে এরর টোস্ট দেখাবে
+      toast.error(`You have already added a ${type.toLowerCase()} with ${friend.name}`, {
+        style: {
+          borderRadius: '12px',
+          background: '#fee2e2', 
+          color: '#ef4444',     
+          fontWeight: 'bold'
+        },
+      });
+      return; // নতুন ডাটা অ্যাড হবে না
+    }
+
+    // ২. নতুন এন্ট্রি তৈরি করা
     const newEntry = {
       id: Date.now(),
-      friendName: friend.name, // টাইমলাইনের জন্য
-      with: friend.name,       // কম্প্যাটিবিলিটির জন্য
+      friendName: friend.name,
+      with: friend.name,
       type: type,
       category: type,
       date: new Date().toLocaleDateString('en-US', { 
@@ -384,16 +422,14 @@ const FriendDetails = ({ addInteraction }) => {
       }),
     };
 
-    // সরাসরি App.jsx এর স্টেটে ডাটা পাঠানো
+    // ৩. App.jsx এর স্টেটে ডাটা পাঠানো
     addInteraction(newEntry);
     
-    // টোস্ট নোটিফিকেশন
-    toast.success(`${type} with ${friend.name} logged!`);
+    // ৪. সাকসেস টোস্ট
+    toast.success(`${type} with ${friend.name} logged successfully!`);
   };
 
-  if (!friend) return (
-    <div className="p-20 text-center font-bold text-gray-400">Loading...</div>
-  );
+  if (!friend) return <div className="p-20 text-center font-bold text-gray-400">Loading...</div>;
 
   return (
     <div className="max-w-6xl mx-auto p-10 grid md:grid-cols-12 gap-8 bg-[#F9FAFB]">
@@ -454,16 +490,7 @@ const FriendDetails = ({ addInteraction }) => {
           </div>
         </div>
 
-        {/* Relationship Goal কার্ড */}
-        <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center">
-          <div>
-            <h3 className="text-sm font-bold text-gray-800 mb-1">Relationship Goal</h3>
-            <p className="text-sm text-gray-500">Connect every <span className="font-bold text-gray-800">{friend.goal} days</span></p>
-          </div>
-          <button className="px-4 py-1 border border-gray-200 rounded-lg text-xs font-bold text-gray-400">Edit</button>
-        </div>
-
-        {/* Quick Check-in (এখানে handleInteraction কানেক্ট করা হয়েছে) */}
+        {/* Quick Check-in */}
         <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm text-center">
           <h3 className="font-bold text-sm mb-6 text-left text-gray-800">Quick Check-in</h3>
           <div className="grid grid-cols-3 gap-4">
@@ -493,27 +520,18 @@ const FriendDetails = ({ addInteraction }) => {
           </div>
         </div>
 
-        {/* Recent Interactions কার্ড */}
+        {/* Recent Interaction Log */}
         <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
-          <div className="flex justify-between items-center mb-6">
-            <h3 className="font-bold text-sm text-gray-800">Recent Interactions</h3>
-            <button className="text-[10px] font-bold text-gray-400 border border-gray-100 px-3 py-1 rounded-lg hover:bg-gray-50 transition">
-              Full History
-            </button>
-          </div>
-
-          <div className="space-y-4">
-             <div className="flex items-center justify-between p-4 border border-gray-50 rounded-xl bg-[#FDFDFD]">
-              <div className="flex items-center gap-4">
-                <div className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl">
-                  <img src={textIcon} className="w-5 opacity-70" alt="text" />
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-gray-800">Note</p>
-                  <p className="text-[10px] text-gray-400">Interaction recorded successfully</p>
-                </div>
+           <h3 className="font-bold text-sm text-gray-800 mb-6">Latest Status</h3>
+           <div className="flex items-center justify-between p-4 border border-gray-50 rounded-xl bg-[#FDFDFD]">
+            <div className="flex items-center gap-4">
+              <div className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl">
+                <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
               </div>
-              <p className="text-[10px] text-gray-400 font-medium">Auto Logged</p>
+              <div>
+                <p className="text-xs font-bold text-gray-800">Session Active</p>
+                <p className="text-[10px] text-gray-400">Interactions are logged for this session.</p>
+              </div>
             </div>
           </div>
         </div>
@@ -521,6 +539,7 @@ const FriendDetails = ({ addInteraction }) => {
     </div>
   );
 };
+
 // ---------------- 404 ----------------
 const NotFound = () => (
   <div className="min-h-screen flex flex-col justify-center items-center">
@@ -549,9 +568,10 @@ export default function App() {
           <Routes>
             <Route path="/" element={<Home />} />
             
+            {/* ডুপ্লিকেট চেক করার জন্য timeline ডাটা এখানে পাঠানো হয়েছে */}
             <Route 
               path="/friend/:id" 
-              element={<FriendDetails addInteraction={addInteraction} />} 
+              element={<FriendDetails addInteraction={addInteraction} timeline={timeline} />} 
             />
             
             <Route 
