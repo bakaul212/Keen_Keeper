@@ -354,3 +354,176 @@ const Stats = () => {
     </div>
   );
 };
+
+// ---------------- FRIEND DETAILS ----------------
+const FriendDetails = () => {
+  const { id } = useParams();
+  const [friend, setFriend] = useState(null);
+
+  useEffect(() => {
+    fetch("/friends.json")
+      .then((res) => res.json())
+      .then((data) => setFriend(data.find((f) => f.id === parseInt(id))));
+  }, [id]);
+
+  // ইন্টারঅ্যাকশন হ্যান্ডলার ফাংশন
+  const handleInteraction = (type) => {
+    if (!friend) return;
+
+    // ১. নতুন টাইমলাইন এন্ট্রি তৈরি
+    const newEntry = {
+      id: Date.now(),
+      with: friend.name, // টাইমলাইন পেজে দেখানোর জন্য
+      type: type,        // আইকন দেখানোর জন্য
+      category: type,    // ফিল্টার করার জন্য
+      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+    };
+
+    // ২. LocalStorage এ সেভ করা (পুরানো ডাটার সাথে নতুনটি যোগ করা)
+    const existingTimeline = JSON.parse(localStorage.getItem("timeline") || "[]");
+    localStorage.setItem("timeline", JSON.stringify([newEntry, ...existingTimeline]));
+
+    // ৩. টোস্ট নোটিফিকেশন দেখানো
+    toast.success(`${type} with ${friend.name} logged!`);
+  };
+
+  if (!friend) return <div className="p-20 text-center font-bold text-gray-400">Loading...</div>;
+
+  return (
+    <div className="max-w-6xl mx-auto p-10 grid md:grid-cols-12 gap-8 bg-[#F9FAFB]">
+      {/* বাম পাশের প্রোফাইল কার্ড */}
+      <div className="md:col-span-4 space-y-4">
+        <div className="bg-white p-8 rounded-[32px] border border-gray-100 text-center shadow-sm">
+          <img src={friend.picture} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-gray-50 object-cover" alt="" />
+          <h2 className="text-2xl font-bold text-[#0D3B31]">{friend.name}</h2>
+          <div className="flex justify-center gap-2 mt-2">
+            <span className="bg-red-500 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase">{friend.status}</span>
+            <span className="bg-green-100 text-[#0D3B31] text-[10px] px-3 py-1 rounded-full font-bold uppercase">FAMILY</span>
+          </div>
+          <p className="text-sm text-gray-500 mt-6 italic">"{friend.bio}"</p>
+          <p className="text-[10px] text-gray-400 mt-2 uppercase font-semibold">Preferred: email</p>
+        </div>
+        
+        {/* Action Buttons */}
+        <div className="space-y-2">
+          <button className="w-full py-3 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-700 flex items-center justify-center gap-2 hover:bg-gray-50 transition">
+            <Clock size={16}/> Snooze 2 Weeks
+          </button>
+          <button className="w-full py-3 bg-white border border-gray-100 rounded-xl text-sm font-bold text-gray-700 flex items-center justify-center gap-2 hover:bg-gray-50 transition">
+            Archive
+          </button>
+          <button className="w-full py-3 bg-white border border-gray-100 rounded-xl text-sm font-bold text-red-500 flex items-center justify-center gap-2 hover:bg-red-50 transition">
+            Delete
+          </button>
+        </div>
+      </div>
+
+      {/* ডান পাশের কন্টেন্ট এরিয়া */}
+      <div className="md:col-span-8 space-y-6">
+        {/* Stats Cards */}
+        <div className="grid grid-cols-3 gap-4">
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <p className="text-3xl font-bold text-[#0D3B31]">{friend.days_since_contact}</p>
+            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-1">Days Since Contact</p>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <p className="text-3xl font-bold text-[#0D3B31]">{friend.goal}</p>
+            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-1">Goal (Days)</p>
+          </div>
+          <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
+            <p className="text-xl font-bold text-[#0D3B31]">{friend.next_due_date}</p>
+            <p className="text-[10px] text-gray-400 uppercase font-bold tracking-widest mt-1">Next Due</p>
+          </div>
+        </div>
+
+        {/* Relationship Goal কার্ড */}
+        <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm flex justify-between items-center">
+          <div>
+            <h3 className="text-sm font-bold text-gray-800 mb-1">Relationship Goal</h3>
+            <p className="text-sm text-gray-500">Connect every <span className="font-bold text-gray-800">{friend.goal} days</span></p>
+          </div>
+          <button className="px-4 py-1 border border-gray-200 rounded-lg text-xs font-bold text-gray-400">Edit</button>
+        </div>
+
+        {/* Quick Check-in (এখানে handleInteraction কানেক্ট করা হয়েছে) */}
+        <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm text-center">
+          <h3 className="font-bold text-sm mb-6 text-left text-gray-800">Quick Check-in</h3>
+          <div className="grid grid-cols-3 gap-4">
+            <button 
+              onClick={() => handleInteraction('Call')}
+              className="p-6 border border-gray-50 rounded-xl hover:bg-gray-50 transition group"
+            >
+              <img src={callIcon} className="w-8 mx-auto mb-2 opacity-70 group-hover:opacity-100" alt="call" />
+              <p className="text-xs font-semibold text-gray-600">Call</p>
+            </button>
+
+            <button 
+              onClick={() => handleInteraction('Text')}
+              className="p-6 border border-gray-50 rounded-xl hover:bg-gray-50 transition group"
+            >
+              <img src={textIcon} className="w-8 mx-auto mb-2 opacity-70 group-hover:opacity-100" alt="text" />
+              <p className="text-xs font-semibold text-gray-600">Text</p>
+            </button>
+
+            <button 
+              onClick={() => handleInteraction('Video')}
+              className="p-6 border border-gray-50 rounded-xl hover:bg-gray-50 transition group"
+            >
+              <img src={videoIcon} className="w-8 mx-auto mb-2 opacity-70 group-hover:opacity-100" alt="video" />
+              <p className="text-xs font-semibold text-gray-600">Video</p>
+            </button>
+          </div>
+        </div>
+
+        {/* Recent Interactions কার্ড */}
+        <div className="bg-white p-8 rounded-[32px] border border-gray-100 shadow-sm">
+          <div className="flex justify-between items-center mb-6">
+            <h3 className="font-bold text-sm text-gray-800">Recent Interactions</h3>
+            <button className="text-[10px] font-bold text-gray-400 border border-gray-100 px-3 py-1 rounded-lg hover:bg-gray-50 transition">
+              Full History
+            </button>
+          </div>
+
+          <div className="space-y-4">
+            {/* এখানে ডাটা স্ট্যাটিক রাখা হয়েছে, আপনি চাইলে localStorage থেকে শেষ ৩টি ডাটা এখানে দেখাতে পারেন */}
+            <div className="flex items-center justify-between p-4 border border-gray-50 rounded-xl bg-[#FDFDFD]">
+              <div className="flex items-center gap-4">
+                <div className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl">
+                  <img src={textIcon} className="w-5 opacity-70" alt="text" />
+                </div>
+                <div>
+                  <p className="text-xs font-bold text-gray-800">Text</p>
+                  <p className="text-[10px] text-gray-400">Asked for career advice</p>
+                </div>
+              </div>
+              <p className="text-[10px] text-gray-400 font-medium">Jan 28, 2026</p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+// ---------------- APP ----------------
+export default function App() {
+  return (
+    <Router>
+      <div className="min-h-screen flex flex-col bg-[#F9FAFB]">
+        <Toaster position="bottom-center" />
+        <Navbar />
+
+        <main className="flex-grow">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/friend/:id" element={<FriendDetails />} />
+            <Route path="/stats" element={<Stats />} />
+            <Route path="/timeline" element={<Timeline />} />
+          </Routes>
+        </main>
+
+        <Footer />
+      </div>
+    </Router>
+  );
+}
