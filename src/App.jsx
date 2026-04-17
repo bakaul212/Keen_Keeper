@@ -533,7 +533,7 @@ const NotFound = () => (
 );
 
 export default function App() {
-  // অ্যাপ রিফ্রেশ দিলে এই স্টেটটি আবার খালি [] হয়ে যাবে
+  // অ্যাপ রিফ্রেশ দিলে এই স্টেটটি আবার খালি [] হয়ে যাবে
   const [timeline, setTimeline] = useState([]);
 
   const addInteraction = (newEntry) => {
@@ -548,18 +548,24 @@ export default function App() {
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
+            
             <Route 
               path="/friend/:id" 
               element={<FriendDetails addInteraction={addInteraction} />} 
             />
+            
             <Route 
               path="/stats" 
               element={<Stats timelineData={timeline} />} 
             />
+            
             <Route 
               path="/timeline" 
               element={<Timeline timelineData={timeline} />} 
             />
+
+            {/* ৪০৪ - নট ফাউন্ড রাউট (এটি সবার নিচে থাকবে) */}
+            <Route path="*" element={<NotFound />} />
           </Routes>
         </main>
         <Footer />
