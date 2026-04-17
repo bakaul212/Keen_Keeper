@@ -213,22 +213,19 @@ const Home = () => {
 };
 
 // ---------------- TIMELINE ----------------
-const Timeline = () => {
+const Timeline = ({ timelineData }) => {
   const [filter, setFilter] = useState("All");
 
-  // LocalStorage থেকে ডাটা রিড করা
-  const timelineData = JSON.parse(localStorage.getItem("timeline") || "[]");
-
-  // ফিল্টার লজিক
+  // ফিল্টার লজিক: এখন এটি সরাসরি props থেকে আসা timelineData ব্যবহার করবে
   const filteredData = filter === "All" 
     ? timelineData 
     : timelineData.filter(item => item.type === filter);
 
-  // টাইপ অনুযায়ী আইকন রিটার্ন করার ফাংশন
+  // টাইপ অনুযায়ী আইকন রিটার্ন করার ফাংশন
   const getIcon = (type) => {
     if (type === 'Text') return textIcon;
     if (type === 'Video') return videoIcon;
-    return callIcon; // Default icon for Call/Meetup
+    return callIcon; 
   };
 
   return (
@@ -251,9 +248,9 @@ const Timeline = () => {
 
       {/* টাইমলাইন লিস্ট */}
       <div className="space-y-3">
-        {filteredData.length > 0 ? (
+        {filteredData && filteredData.length > 0 ? (
           filteredData.map((item) => (
-            <div key={item.id} className="flex items-center gap-6 p-5 bg-white border border-gray-50 rounded-2xl shadow-sm hover:border-gray-200 transition-all">
+            <div key={item.id} className="flex items-center gap-6 p-5 bg-white border border-gray-100 rounded-2xl shadow-sm hover:border-gray-200 transition-all">
               {/* আইকন বক্স */}
               <div className="w-12 h-12 flex items-center justify-center bg-gray-50 rounded-xl">
                 <img 
@@ -273,8 +270,8 @@ const Timeline = () => {
             </div>
           ))
         ) : (
-          <div className="text-center py-10 text-gray-400 font-medium italic">
-            No interactions found in this category.
+          <div className="text-center py-20 bg-white rounded-3xl border border-dashed border-gray-200 text-gray-400 font-medium italic">
+            No interactions logged yet. Go to a friend's profile to start!
           </div>
         )}
       </div>
@@ -283,21 +280,18 @@ const Timeline = () => {
 };
 
 // ---------------- STATS (PIE CHART) ----------------
-const Stats = () => {
-  // ১. LocalStorage থেকে ডাটা সংগ্রহ করা
-  const timelineData = JSON.parse(localStorage.getItem("timeline") || "[]");
-
-  // ২. ডাটা প্রসেস করা (টাইপ অনুযায়ী গণনা করা)
+const Stats = ({ timelineData }) => {
+  // ১. সরাসরি props থেকে আসা timelineData প্রসেস করা (টাইপ অনুযায়ী গণনা করা)
   const data = [
     { name: 'Call', value: timelineData.filter(i => i.type === 'Call').length },
     { name: 'Text', value: timelineData.filter(i => i.type === 'Text').length },
     { name: 'Video', value: timelineData.filter(i => i.type === 'Video').length },
   ];
 
-  // টোটাল ইন্টারঅ্যাকশন সংখ্যা
+  // টোটাল ইন্টারঅ্যাকশন সংখ্যা (স্টেট থেকে আসা ডাটার লেংথ)
   const totalInteractions = timelineData.length;
 
-  // ফিগমা কালার থিম অনুযায়ী কালার প্যালেট
+  // ফিগমা কালার থিম অনুযায়ী কালার প্যালেট
   const COLORS = ['#0D3B31', '#8B5CF6', '#10B981']; 
 
   return (
@@ -326,7 +320,11 @@ const Stats = () => {
                 ))}
               </Pie>
               <Tooltip 
-                contentStyle={{ borderRadius: '10px', border: 'none', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
+                contentStyle={{ 
+                  borderRadius: '10px', 
+                  border: 'none', 
+                  boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' 
+                }}
               />
             </PieChart>
           </ResponsiveContainer>
@@ -356,52 +354,71 @@ const Stats = () => {
 };
 
 // ---------------- FRIEND DETAILS ----------------
-const FriendDetails = () => {
+const FriendDetails = ({ addInteraction }) => {
   const { id } = useParams();
   const [friend, setFriend] = useState(null);
 
   useEffect(() => {
     fetch("/friends.json")
       .then((res) => res.json())
-      .then((data) => setFriend(data.find((f) => f.id === parseInt(id))));
+      .then((data) => {
+        const foundFriend = data.find((f) => f.id === parseInt(id));
+        setFriend(foundFriend);
+      });
   }, [id]);
 
-  // ইন্টারঅ্যাকশন হ্যান্ডলার ফাংশন
+  // ইন্টারঅ্যাকশন হ্যান্ডলার ফাংশন (LocalStorage ছাড়া সরাসরি স্টেটে ডাটা পাঠাবে)
   const handleInteraction = (type) => {
     if (!friend) return;
 
-    // ১. নতুন টাইমলাইন এন্ট্রি তৈরি
     const newEntry = {
       id: Date.now(),
-      with: friend.name, // টাইমলাইন পেজে দেখানোর জন্য
-      type: type,        // আইকন দেখানোর জন্য
-      category: type,    // ফিল্টার করার জন্য
-      date: new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' }),
+      friendName: friend.name, // টাইমলাইনের জন্য
+      with: friend.name,       // কম্প্যাটিবিলিটির জন্য
+      type: type,
+      category: type,
+      date: new Date().toLocaleDateString('en-US', { 
+        month: 'long', 
+        day: 'numeric', 
+        year: 'numeric' 
+      }),
     };
 
-    // ২. LocalStorage এ সেভ করা (পুরানো ডাটার সাথে নতুনটি যোগ করা)
-    const existingTimeline = JSON.parse(localStorage.getItem("timeline") || "[]");
-    localStorage.setItem("timeline", JSON.stringify([newEntry, ...existingTimeline]));
-
-    // ৩. টোস্ট নোটিফিকেশন দেখানো
+    // সরাসরি App.jsx এর স্টেটে ডাটা পাঠানো
+    addInteraction(newEntry);
+    
+    // টোস্ট নোটিফিকেশন
     toast.success(`${type} with ${friend.name} logged!`);
   };
 
-  if (!friend) return <div className="p-20 text-center font-bold text-gray-400">Loading...</div>;
+  if (!friend) return (
+    <div className="p-20 text-center font-bold text-gray-400">Loading...</div>
+  );
 
   return (
     <div className="max-w-6xl mx-auto p-10 grid md:grid-cols-12 gap-8 bg-[#F9FAFB]">
+      
       {/* বাম পাশের প্রোফাইল কার্ড */}
       <div className="md:col-span-4 space-y-4">
         <div className="bg-white p-8 rounded-[32px] border border-gray-100 text-center shadow-sm">
-          <img src={friend.picture} className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-gray-50 object-cover" alt="" />
+          <img 
+            src={friend.picture} 
+            className="w-24 h-24 rounded-full mx-auto mb-4 border-4 border-gray-50 object-cover" 
+            alt={friend.name} 
+          />
           <h2 className="text-2xl font-bold text-[#0D3B31]">{friend.name}</h2>
           <div className="flex justify-center gap-2 mt-2">
-            <span className="bg-red-500 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase">{friend.status}</span>
-            <span className="bg-green-100 text-[#0D3B31] text-[10px] px-3 py-1 rounded-full font-bold uppercase">FAMILY</span>
+            <span className="bg-red-500 text-white text-[10px] px-3 py-1 rounded-full font-bold uppercase">
+              {friend.status || 'OVERDUE'}
+            </span>
+            <span className="bg-green-100 text-[#0D3B31] text-[10px] px-3 py-1 rounded-full font-bold uppercase">
+              FAMILY
+            </span>
           </div>
           <p className="text-sm text-gray-500 mt-6 italic">"{friend.bio}"</p>
-          <p className="text-[10px] text-gray-400 mt-2 uppercase font-semibold">Preferred: email</p>
+          <p className="text-[10px] text-gray-400 mt-2 uppercase font-semibold">
+            Preferred: email
+          </p>
         </div>
         
         {/* Action Buttons */}
@@ -420,6 +437,7 @@ const FriendDetails = () => {
 
       {/* ডান পাশের কন্টেন্ট এরিয়া */}
       <div className="md:col-span-8 space-y-6">
+        
         {/* Stats Cards */}
         <div className="grid grid-cols-3 gap-4">
           <div className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm text-center">
@@ -445,7 +463,7 @@ const FriendDetails = () => {
           <button className="px-4 py-1 border border-gray-200 rounded-lg text-xs font-bold text-gray-400">Edit</button>
         </div>
 
-        {/* Quick Check-in (এখানে handleInteraction কানেক্ট করা হয়েছে) */}
+        {/* Quick Check-in (এখানে handleInteraction কানেক্ট করা হয়েছে) */}
         <div className="bg-white p-8 rounded-2xl border border-gray-100 shadow-sm text-center">
           <h3 className="font-bold text-sm mb-6 text-left text-gray-800">Quick Check-in</h3>
           <div className="grid grid-cols-3 gap-4">
@@ -485,18 +503,17 @@ const FriendDetails = () => {
           </div>
 
           <div className="space-y-4">
-            {/* এখানে ডাটা স্ট্যাটিক রাখা হয়েছে, আপনি চাইলে localStorage থেকে শেষ ৩টি ডাটা এখানে দেখাতে পারেন */}
-            <div className="flex items-center justify-between p-4 border border-gray-50 rounded-xl bg-[#FDFDFD]">
+             <div className="flex items-center justify-between p-4 border border-gray-50 rounded-xl bg-[#FDFDFD]">
               <div className="flex items-center gap-4">
                 <div className="w-10 h-10 flex items-center justify-center bg-gray-50 rounded-xl">
                   <img src={textIcon} className="w-5 opacity-70" alt="text" />
                 </div>
                 <div>
-                  <p className="text-xs font-bold text-gray-800">Text</p>
-                  <p className="text-[10px] text-gray-400">Asked for career advice</p>
+                  <p className="text-xs font-bold text-gray-800">Note</p>
+                  <p className="text-[10px] text-gray-400">Interaction recorded successfully</p>
                 </div>
               </div>
-              <p className="text-[10px] text-gray-400 font-medium">Jan 28, 2026</p>
+              <p className="text-[10px] text-gray-400 font-medium">Auto Logged</p>
             </div>
           </div>
         </div>
@@ -504,24 +521,47 @@ const FriendDetails = () => {
     </div>
   );
 };
+// ---------------- 404 ----------------
+const NotFound = () => (
+  <div className="min-h-screen flex flex-col justify-center items-center">
+    <h1 className="text-6xl font-bold">404</h1>
+    <p className="mb-4">Page Not Found</p>
+    <Link to="/" className="bg-[#0D3B31] text-white px-4 py-2 rounded">
+      Go Home
+    </Link>
+  </div>
+);
 
-// ---------------- APP ----------------
 export default function App() {
+  // অ্যাপ রিফ্রেশ দিলে এই স্টেটটি আবার খালি [] হয়ে যাবে
+  const [timeline, setTimeline] = useState([]);
+
+  const addInteraction = (newEntry) => {
+    setTimeline([newEntry, ...timeline]);
+  };
+
   return (
     <Router>
       <div className="min-h-screen flex flex-col bg-[#F9FAFB]">
         <Toaster position="bottom-center" />
         <Navbar />
-
         <main className="flex-grow">
           <Routes>
             <Route path="/" element={<Home />} />
-            <Route path="/friend/:id" element={<FriendDetails />} />
-            <Route path="/stats" element={<Stats />} />
-            <Route path="/timeline" element={<Timeline />} />
+            <Route 
+              path="/friend/:id" 
+              element={<FriendDetails addInteraction={addInteraction} />} 
+            />
+            <Route 
+              path="/stats" 
+              element={<Stats timelineData={timeline} />} 
+            />
+            <Route 
+              path="/timeline" 
+              element={<Timeline timelineData={timeline} />} 
+            />
           </Routes>
         </main>
-
         <Footer />
       </div>
     </Router>
