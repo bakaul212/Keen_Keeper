@@ -211,3 +211,73 @@ const Home = () => {
     </div>
   );
 };
+
+// ---------------- TIMELINE ----------------
+const Timeline = () => {
+  const [filter, setFilter] = useState("All");
+
+  // LocalStorage থেকে ডাটা রিড করা
+  const timelineData = JSON.parse(localStorage.getItem("timeline") || "[]");
+
+  // ফিল্টার লজিক
+  const filteredData = filter === "All" 
+    ? timelineData 
+    : timelineData.filter(item => item.type === filter);
+
+  // টাইপ অনুযায়ী আইকন রিটার্ন করার ফাংশন
+  const getIcon = (type) => {
+    if (type === 'Text') return textIcon;
+    if (type === 'Video') return videoIcon;
+    return callIcon; // Default icon for Call/Meetup
+  };
+
+  return (
+    <div className="max-w-4xl mx-auto py-16 px-6 min-h-screen">
+      {/* হেডিং */}
+      <h1 className="text-5xl font-bold text-[#1a2b3b] mb-10">Timeline</h1>
+      
+      {/* C2. Timeline Filter */}
+      <div className="mb-8">
+        <select 
+          onChange={(e) => setFilter(e.target.value)}
+          className="p-3 bg-white border border-gray-100 rounded-lg text-[10px] font-bold text-gray-400 uppercase tracking-widest outline-none w-48 shadow-sm cursor-pointer"
+        >
+          <option value="All">Filter timeline</option>
+          <option value="Call">Call / Meetup</option>
+          <option value="Text">Text</option>
+          <option value="Video">Video</option>
+        </select>
+      </div>
+
+      {/* টাইমলাইন লিস্ট */}
+      <div className="space-y-3">
+        {filteredData.length > 0 ? (
+          filteredData.map((item) => (
+            <div key={item.id} className="flex items-center gap-6 p-5 bg-white border border-gray-50 rounded-2xl shadow-sm hover:border-gray-200 transition-all">
+              {/* আইকন বক্স */}
+              <div className="w-12 h-12 flex items-center justify-center bg-gray-50 rounded-xl">
+                <img 
+                  src={getIcon(item.type)} 
+                  className="h-6 w-6 object-contain opacity-80" 
+                  alt={item.type} 
+                />
+              </div>
+              
+              {/* টেক্সট কন্টেন্ট */}
+              <div>
+                <p className="text-md font-bold text-gray-800">
+                  {item.type} <span className="text-gray-400 font-medium">with {item.friendName || item.with}</span>
+                </p>
+                <p className="text-[10px] font-bold text-gray-300 mt-0.5">{item.date}</p>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-10 text-gray-400 font-medium italic">
+            No interactions found in this category.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+};
