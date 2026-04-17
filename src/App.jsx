@@ -77,3 +77,39 @@ const Navbar = () => (
     </div>
   </nav>
 );
+
+// ---------------- FOOTER ----------------
+const Footer = () => (
+  <footer className="bg-[#0D3B31] text-white py-16 px-10 mt-auto text-center border-t border-gray-800">
+    <h2 className="text-5xl font-bold mb-4 italic tracking-tighter">KeenKeeper</h2>
+    <p className="text-gray-300 text-sm mb-10 max-w-2xl mx-auto font-medium opacity-90 leading-relaxed">
+      Your personal shelf of meaningful connections. Browse, tend, and nurture the relationships that matter most.
+    </p>
+
+    <div className="mb-10">
+      <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white mb-6">Social Links</p>
+      <div className="flex justify-center gap-5">
+        <a href="#" className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-gray-200 transition shadow-sm">
+          <img src={instagramIcon} alt="Instagram" className="h-5 object-contain" />
+        </a>
+        <a href="#" className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-gray-200 transition shadow-sm">
+          <img src={facebookIcon} alt="Facebook" className="h-5 object-contain" />
+        </a>
+        <a href="#" className="w-10 h-10 bg-white rounded-full flex items-center justify-center hover:bg-gray-200 transition shadow-sm">
+          <img src={twitterIcon} alt="Twitter/X" className="h-5 object-contain" />
+        </a>
+      </div>
+    </div>
+
+    <div className="pt-10 border-t border-white/10 flex flex-col md:flex-row justify-between items-center gap-6 max-w-7xl mx-auto">
+      <p className="text-[11px] text-gray-400 font-bold uppercase tracking-widest">
+        © 2026 KEENKEEPER. ALL RIGHTS RESERVED.
+      </p>
+      <div className="flex gap-8 text-[11px] text-gray-400 font-bold uppercase tracking-widest">
+        <a href="#" className="hover:text-white transition-colors duration-200">Privacy Policy</a>
+        <a href="#" className="hover:text-white transition-colors duration-200">Terms of Service</a>
+        <a href="#" className="hover:text-white transition-colors duration-200">Cookies</a>
+      </div>
+    </div>
+  </footer>
+); 
